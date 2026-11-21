@@ -3,7 +3,7 @@
 챗봇 썸네일처럼 이미지 몇 장을 겹쳐 한 장으로 만드는 일에 쓰는 작은 웹 이미지 편집기입니다.
 설치, 빌드, 서버가 필요 없고, 이미지는 브라우저 밖으로 나가지 않습니다.
 
-**[▶ 바로 열기](https://sisayousm-beep.github.io/pixora/)**
+**[▶ 바로 열기](https://htmlpreview.github.io/?https://github.com/sisayousm-beep/pixora/blob/main/index.html)**
 
 ## 사용법
 
