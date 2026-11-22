@@ -10,17 +10,22 @@
     color-scheme: dark;
     --app:#1E1E1E; --bar:#252525; --well:#141414; --line:#333333; --line2:#3A3A3A;
     --fg:#EDEDED; --muted:#A0A0A0; --dim:#6E6E6E; --accent:#31A8FF; --on-accent:#0B1B2B; --sel:#1F3A52;
+    --checker:repeating-conic-gradient(#2a2a2a 0 25%, #333 0 50%) 0 0/16px 16px;
   }
   * { box-sizing:border-box; }
   [hidden] { display:none !important; }
   html, body { margin:0; height:100%; background:#0E0E0E; }
   body { font:13px/1.3 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; color:var(--fg);
          max-width:520px; margin:0 auto; height:100dvh; background:var(--app);
-         display:grid; grid-template-rows:auto minmax(0,1fr) auto auto; overflow:hidden; }
+         display:grid; grid-template-rows:auto minmax(0,1fr) auto auto auto; overflow:hidden; }
   button, input { font:inherit; color:inherit; }
   button { cursor:pointer; -webkit-tap-highlight-color:transparent; }
   button:focus-visible, input:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
   svg { display:block; }
+  /* 16px 미만이면 iOS가 포커스 때 확대한다 */
+  .num { height:36px; padding:0 8px; background:var(--well); border:1px solid var(--line2); border-radius:6px;
+         font-size:16px; font-variant-numeric:tabular-nums; color:var(--fg); }
+  .num:disabled { color:var(--dim); }
 
   header { display:flex; align-items:center; gap:2px; height:52px; padding:0 6px 0 16px;
            padding-top:env(safe-area-inset-top); background:var(--bar); border-bottom:1px solid var(--line); }
@@ -31,16 +36,27 @@
 
   main { position:relative; min-height:0; background:var(--well);
          display:flex; align-items:center; justify-content:center; padding:16px; }
-  canvas { max-width:100%; max-height:100%; touch-action:none; box-shadow:0 4px 24px #00000080;
-           background:repeating-conic-gradient(#2a2a2a 0 25%, #333 0 50%) 0 0/16px 16px; }
-  #info { position:absolute; left:12px; bottom:10px; font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  #c { max-width:100%; max-height:100%; touch-action:none; box-shadow:0 4px 24px #00000080; background:var(--checker); }
+  #info { position:absolute; left:12px; bottom:8px; font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; }
+
+  .frames { display:flex; align-items:center; gap:6px; padding:8px 12px; overflow-x:auto;
+            background:var(--bar); border-top:1px solid var(--line); }
+  .frame { position:relative; flex-shrink:0; height:48px; min-width:48px; padding:3px; border:1px solid var(--line2);
+           border-radius:6px; background:var(--app); display:flex; align-items:center; justify-content:center; }
+  .frame[aria-pressed=true] { border:2px solid var(--accent); padding:2px; }
+  .frame canvas, .durs canvas { display:block; height:40px; border-radius:3px; background:var(--checker); }
+  .frame b { position:absolute; left:3px; top:3px; min-width:16px; padding:0 4px; border-radius:3px;
+             background:#000000B0; font-size:10px; line-height:16px; }
+  .frame-add { flex-shrink:0; width:48px; height:48px; border:1px dashed #555; border-radius:6px; background:none;
+               color:var(--muted); display:flex; align-items:center; justify-content:center; }
+  .frame-del { flex-shrink:0; margin-left:auto; }
 
   [role=tablist] { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); height:48px;
                    background:var(--bar); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
   [role=tab] { border:0; background:none; color:var(--muted); }
   [role=tab][aria-selected=true] { color:var(--fg); font-weight:600; box-shadow:inset 0 -2px 0 var(--accent); }
 
-  .panel { height:min(50dvh, 420px); padding-bottom:env(safe-area-inset-bottom); }
+  .panel { height:min(46dvh, 400px); padding-bottom:env(safe-area-inset-bottom); }
   [role=tabpanel] { height:100%; display:flex; flex-direction:column; overflow:auto; }
 
   #layers { list-style:none; margin:0; padding:6px 8px; display:flex; flex-direction:column; gap:2px; }
@@ -53,18 +69,16 @@
   .empty { margin:auto; padding:24px; text-align:center; color:var(--muted); display:flex; flex-direction:column; gap:12px; align-items:center; }
 
   .props { margin:4px 16px 12px; padding-top:12px; border:0; border-top:1px solid var(--line); min-width:0; }
-  .props legend { float:left; width:100%; margin-bottom:10px; padding:0; font-size:11px; font-weight:600; color:var(--muted); letter-spacing:.04em; }
+  .props legend, .label { float:left; width:100%; margin-bottom:10px; padding:0; font-size:11px; font-weight:600; color:var(--muted); letter-spacing:.04em; }
   .props .grid { clear:both; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
   .props label { display:flex; flex-direction:column; gap:4px; font-size:11px; color:var(--muted); }
-  .props input { width:100%; height:36px; padding:0 8px; background:var(--well); border:1px solid var(--line2);
-                 border-radius:6px; font-variant-numeric:tabular-nums; color:var(--fg);
-                 font-size:16px; } /* 16px 미만이면 iOS가 포커스 때 확대한다 */
-  .props input:disabled { color:var(--dim); }
+  .props .num { width:100%; }
   .props .fit { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin-top:8px; }
 
   .actions { margin-top:auto; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px;
              padding:10px 12px 14px; background:var(--bar); border-top:1px solid var(--line); position:sticky; bottom:0; }
-  .btn { height:44px; border:1px solid var(--line2); border-radius:8px; background:var(--app);
+  .actions.one { grid-template-columns:1fr; }
+  .btn { height:44px; padding:0 12px; border:1px solid var(--line2); border-radius:8px; background:var(--app);
          display:flex; align-items:center; justify-content:center; gap:6px; }
   .btn:disabled { color:var(--dim); cursor:default; }
   .btn.primary { background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:600; }
@@ -75,10 +89,19 @@
   .ratio[aria-pressed=true] { border-color:var(--accent); color:var(--fg); background:var(--sel); }
   .ratio i { display:block; border:1.5px solid currentColor; border-radius:2px; }
 
-  .export { padding:20px 16px; display:flex; flex-direction:column; gap:16px; }
+  .export { padding:16px; display:flex; flex-direction:column; gap:16px; }
   .export dl { margin:0; display:grid; grid-template-columns:auto 1fr; gap:10px 16px; }
   .export dt { color:var(--muted); }
   .export dd { margin:0; font-variant-numeric:tabular-nums; }
+  .anim { display:flex; flex-direction:column; gap:12px; padding-top:16px; border-top:1px solid var(--line); }
+  .line { display:flex; align-items:center; gap:8px; }
+  .line > span:first-child { width:72px; flex-shrink:0; color:var(--muted); }
+  .line .num { width:84px; }
+  .hint { color:var(--muted); font-size:12px; }
+  .durs { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+  .durs li { display:flex; align-items:center; gap:10px; }
+  .durs li span { flex:1; }
+  .durs .num { width:84px; }
 </style>
 </head>
 <body>
@@ -101,6 +124,16 @@
   <span id="info"></span>
 </main>
 
+<div class="frames" role="group" aria-label="장면">
+  <div id="frame-list" style="display:contents"></div>
+  <button class="frame-add" id="frame-add" aria-label="장면 추가">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+  <button class="icon frame-del" id="frame-del" aria-label="현재 장면 삭제">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
+  </button>
+</div>
+
 <nav role="tablist" aria-label="패널">
   <button role="tab" id="t-layers" aria-controls="p-layers" aria-selected="true">레이어</button>
   <button role="tab" id="t-ratio" aria-controls="p-ratio" aria-selected="false">비율</button>
@@ -111,16 +144,16 @@
   <section role="tabpanel" id="p-layers" aria-labelledby="t-layers">
     <ul id="layers"></ul>
     <div class="empty" id="empty">
-      이미지를 불러와서 썸네일을 만드세요.
+      이 장면에 이미지를 불러오세요.
       <button class="btn primary" id="add2" style="padding:0 20px">이미지 불러오기</button>
     </div>
     <fieldset class="props" id="props">
       <legend>속성</legend>
       <div class="grid">
-        <label>X<input id="px" type="number" inputmode="numeric"></label>
-        <label>Y<input id="py" type="number" inputmode="numeric"></label>
-        <label>W<input id="pw" type="number" inputmode="numeric" min="1"></label>
-        <label>H<input id="ph" type="number" inputmode="numeric" min="1"></label>
+        <label>X<input class="num" id="px" type="number" inputmode="numeric"></label>
+        <label>Y<input class="num" id="py" type="number" inputmode="numeric"></label>
+        <label>W<input class="num" id="pw" type="number" inputmode="numeric" min="1"></label>
+        <label>H<input class="num" id="ph" type="number" inputmode="numeric" min="1"></label>
       </div>
       <div class="fit">
         <button class="btn" id="fit-contain" title="이미지 전체가 캔버스 안에 들어가게">
@@ -147,15 +180,29 @@
       <button class="ratio" data-ratio="9:16"><i style="width:20px;height:36px"></i>9:16</button>
       <button class="ratio" data-ratio="3:4"><i style="width:24px;height:32px"></i>3:4</button>
     </div>
+    <p class="hint" style="margin:0 16px">비율은 모든 장면에 같이 적용됩니다.</p>
   </section>
 
   <section role="tabpanel" id="p-export" aria-labelledby="t-export" hidden>
     <div class="export">
       <dl>
         <dt>크기</dt><dd id="e-size"></dd>
-        <dt>형식</dt><dd>WebP · 화질 90%</dd>
+        <dt>형식</dt><dd id="e-format"></dd>
         <dt>투명 영역</dt><dd>이미지가 없는 곳은 투명하게 저장</dd>
       </dl>
+      <div class="anim" id="anim">
+        <label class="line"><span>반복 횟수</span>
+          <input class="num" id="loops" type="number" inputmode="numeric" min="0" max="65535" step="1" value="0">
+          <span class="hint">0 = 무한 반복</span></label>
+        <div class="line"><label for="dur-all" style="width:72px;flex-shrink:0;color:var(--muted)">일괄 시간</label>
+          <input class="num" id="dur-all" type="number" inputmode="decimal" min="0.1" step="0.1" value="2">
+          <span class="hint">초</span>
+          <button class="btn" id="dur-apply" style="margin-left:auto">모두 적용</button></div>
+        <span class="label" style="margin:4px 0 0">장면별 시간 (초)</span>
+        <ul class="durs" id="durs"></ul>
+      </div>
+    </div>
+    <div class="actions one">
       <button class="btn primary" id="save">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>WebP로 저장</button>
     </div>
@@ -167,13 +214,18 @@ const LONG_SIDE = 1280, QUALITY = 0.9, HIT = 22;  // HIT: 모서리 핸들 터�
 const $ = id => document.getElementById(id);
 const cv = $('c'), ctx = cv.getContext('2d');
 let ratio = '16:9';
-let layers = [];  // 뒤 -> 앞. 마지막 요소가 맨 위에 그려진다.
+// 장면마다 layers(뒤 -> 앞, 마지막이 맨 위)와 표시 시간(초)을 가진다
+const durDefault = () => clampDur(Number($('dur-all').value));
+const clampDur = v => Number.isFinite(v) ? Math.min(16000, Math.max(0.1, Math.round(v * 10) / 10)) : 2;
+let frames = [{ layers: [], dur: 2 }], cur = 0;
 let sel = null;
+const F = () => frames[cur];
 
 // ---- 실행 취소: 바뀌기 직전 상태를 쌓아 둔다 ----
 let past = [], future = [];
-const snap = () => ({ layers: layers.map(l => ({ ...l })), sel: layers.indexOf(sel) });
-function restore(s) { layers = s.layers.map(l => ({ ...l })); sel = layers[s.sel] || null; refresh(); }
+const copy = fs => fs.map(f => ({ ...f, layers: f.layers.map(l => ({ ...l })) }));
+const snap = () => ({ frames: copy(frames), cur, sel: F().layers.indexOf(sel) });
+function restore(s) { frames = copy(s.frames); cur = s.cur; sel = F().layers[s.sel] || null; refresh(); }
 function save(s = snap()) { past.push(s); future = []; }
 $('undo').onclick = () => { if (past.length) { future.push(snap()); restore(past.pop()); } };
 $('redo').onclick = () => { if (future.length) { past.push(snap()); restore(future.pop()); } };
@@ -182,9 +234,23 @@ $('redo').onclick = () => { if (future.length) { past.push(snap()); restore(futu
 const screenScale = () => cv.width / cv.getBoundingClientRect().width;  // 화면 1px = 캔버스 몇 px
 const corners = l => [[l.x, l.y, -1, -1], [l.x + l.w, l.y, 1, -1], [l.x, l.y + l.h, -1, 1], [l.x + l.w, l.y + l.h, 1, 1]];
 
+function paint(c2d, layers, scale = 1) {
+  c2d.setTransform(1, 0, 0, 1, 0, 0);
+  c2d.clearRect(0, 0, c2d.canvas.width, c2d.canvas.height);
+  c2d.setTransform(scale, 0, 0, scale, 0, 0);
+  for (const l of layers) c2d.drawImage(l.img, l.x, l.y, l.w, l.h);
+  c2d.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+function thumb(frame) {
+  const c = document.createElement('canvas'), h = 80;  // 화면 40px의 2배 해상도
+  c.height = h; c.width = Math.round(h * cv.width / cv.height);
+  paint(c.getContext('2d'), frame.layers, h / cv.height);
+  return c;
+}
+
 function draw(clean = false) {
-  ctx.clearRect(0, 0, cv.width, cv.height);
-  for (const l of layers) ctx.drawImage(l.img, l.x, l.y, l.w, l.h);
+  paint(ctx, F().layers);
   if (sel && !clean) {
     const s = screenScale(), h = 10 * s;
     ctx.strokeStyle = '#31A8FF'; ctx.lineWidth = 1.5 * s;
@@ -192,27 +258,60 @@ function draw(clean = false) {
     ctx.fillStyle = '#FFFFFF';
     for (const [x, y] of corners(sel)) { ctx.fillRect(x - h / 2, y - h / 2, h, h); ctx.strokeRect(x - h / 2, y - h / 2, h, h); }
   }
-  $('info').textContent = `${cv.width} × ${cv.height} · ${Math.round(100 / screenScale())}%`;
-  $('e-size').textContent = `${cv.width} × ${cv.height} px`;
+  $('info').textContent = `장면 ${cur + 1}/${frames.length} · ${cv.width} × ${cv.height} · ${Math.round(100 / screenScale())}%`;
   for (const [k, v] of [['px', sel?.x], ['py', sel?.y], ['pw', sel?.w], ['ph', sel?.h]]) {
     if (document.activeElement !== $(k)) $(k).value = sel ? Math.round(v) : '';
   }
 }
 
 function refresh() {
+  const layers = F().layers;
+  // 레이어 목록
   const ul = $('layers');
   ul.textContent = '';
   for (const l of [...layers].reverse()) {
     const li = document.createElement('li'), row = document.createElement('button');
     row.className = 'row';
     row.setAttribute('aria-pressed', l === sel);
-    const thumb = new Image(); thumb.src = l.img.src; thumb.alt = '';
+    const img = new Image(); img.src = l.img.src; img.alt = '';
     const name = document.createElement('span'); name.className = 'name'; name.textContent = l.name;
     const dim = document.createElement('span'); dim.className = 'dim'; dim.textContent = `${Math.round(l.w)}×${Math.round(l.h)}`;
-    row.append(thumb, name, dim);
+    row.append(img, name, dim);
     row.onclick = () => { sel = l; refresh(); };
     li.append(row); ul.append(li);
   }
+  // 장면 줄
+  const fl = $('frame-list');
+  fl.textContent = '';
+  frames.forEach((f, i) => {
+    const b = document.createElement('button'), n = document.createElement('b');
+    b.className = 'frame';
+    b.setAttribute('aria-pressed', i === cur);
+    b.setAttribute('aria-label', `장면 ${i + 1}`);
+    n.textContent = i + 1;
+    b.append(thumb(f), n);
+    b.onclick = () => { if (i !== cur) { cur = i; sel = null; refresh(); } };
+    fl.append(b);
+  });
+  fl.children[cur].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  $('frame-del').hidden = frames.length < 2;
+  // 내보내기: 장면별 시간
+  const durs = $('durs');
+  durs.textContent = '';
+  frames.forEach((f, i) => {
+    const li = document.createElement('li'), label = document.createElement('span'), inp = document.createElement('input');
+    label.textContent = `장면 ${i + 1}`;
+    Object.assign(inp, { className: 'num', type: 'number', inputMode: 'decimal', min: '0.1', step: '0.1', value: f.dur });
+    inp.setAttribute('aria-label', `장면 ${i + 1} 표시 시간 (초)`);
+    inp.onchange = () => { save(); f.dur = clampDur(Number(inp.value)); refresh(); };
+    li.append(thumb(f), label, inp);
+    durs.append(li);
+  });
+  const anim = frames.length > 1;
+  $('anim').hidden = !anim;
+  $('e-format').textContent = anim ? `움직이는 WebP · 장면 ${frames.length}개 · 화질 90%` : 'WebP · 화질 90%';
+  $('e-size').textContent = `${cv.width} × ${cv.height} px`;
+  // 버튼 상태
   const i = layers.indexOf(sel);
   $('empty').hidden = layers.length > 0;
   $('props').hidden = $('actions').hidden = layers.length === 0;
@@ -225,9 +324,18 @@ function refresh() {
   draw();
 }
 
+// ---- 장면 ----
+$('frame-add').onclick = () => { save(); frames.push({ layers: [], dur: durDefault() }); cur = frames.length - 1; sel = null; refresh(); };
+$('frame-del').onclick = () => {
+  if (frames.length < 2) return;
+  save(); frames.splice(cur, 1); cur = Math.min(cur, frames.length - 1); sel = null; refresh();
+};
+$('dur-apply').onclick = () => { const d = durDefault(); $('dur-all').value = d; save(); frames.forEach(f => f.dur = d); refresh(); };
+$('loops').onchange = e => { e.target.value = Math.min(65535, Math.max(0, Math.round(Number(e.target.value)) || 0)); };
+
 // ---- 레이어 조작 ----
 function reorder(step) {
-  const i = layers.indexOf(sel), j = i + step;
+  const layers = F().layers, i = layers.indexOf(sel), j = i + step;
   if (!sel || j < 0 || j >= layers.length) return;
   save();
   [layers[i], layers[j]] = [layers[j], layers[i]];
@@ -235,7 +343,7 @@ function reorder(step) {
 }
 $('fwd').onclick = () => reorder(1);
 $('back').onclick = () => reorder(-1);
-$('del').onclick = () => { if (!sel) return; save(); layers = layers.filter(l => l !== sel); sel = null; refresh(); };
+$('del').onclick = () => { if (!sel) return; save(); F().layers = F().layers.filter(l => l !== sel); sel = null; refresh(); };
 
 // 캔버스 가운데에 비율 유지로 맞춤: contain = 전체가 보이게, cover = 빈틈없이 채우게
 function fit(cover) {
@@ -253,7 +361,7 @@ $('fit-cover').onclick = () => fit(true);
 for (const id of ['px', 'py', 'pw', 'ph']) {
   $(id).onchange = e => {
     const v = Number(e.target.value);
-    if (!sel || !Number.isFinite(v) || (id[1] === 'w' || id[1] === 'h') && v < 1) return draw();
+    if (!sel || !Number.isFinite(v) || (id === 'pw' || id === 'ph') && v < 1) return draw();
     save();
     if (id === 'px') sel.x = v;
     if (id === 'py') sel.y = v;
@@ -264,6 +372,7 @@ for (const id of ['px', 'py', 'pw', 'ph']) {
 }
 
 function addFiles(files) {
+  const frame = F();  // 로딩 중에 장면을 바꿔도 처음 장면에 들어가게
   for (const f of files) {
     if (!f.type.startsWith('image/')) continue;
     const img = new Image();
@@ -271,9 +380,11 @@ function addFiles(files) {
       // 캔버스 안에 들어오게 줄여서 가운데 배치 (확대는 하지 않음)
       const s = Math.min(cv.width / img.naturalWidth, cv.height / img.naturalHeight, 1);
       const w = img.naturalWidth * s, h = img.naturalHeight * s;
+      if (!frames.includes(frame)) return;  // 그 사이 장면이 삭제됨
       save();
-      sel = { img, name: f.name, w, h, x: (cv.width - w) / 2, y: (cv.height - h) / 2 };
-      layers.push(sel);
+      const layer = { img, name: f.name, w, h, x: (cv.width - w) / 2, y: (cv.height - h) / 2 };
+      frame.layers.push(layer);
+      if (frame === F()) sel = layer;
       refresh();
     };
     img.onerror = () => alert(`${f.name}: 이미지를 읽을 수 없습니다.`);
@@ -296,7 +407,7 @@ const cornerAt = p => {
   const r = HIT * screenScale();
   return corners(sel).find(([x, y]) => Math.abs(p.x - x) < r && Math.abs(p.y - y) < r) || null;
 };
-const hit = p => [...layers].reverse().find(l => p.x >= l.x && p.x <= l.x + l.w && p.y >= l.y && p.y <= l.y + l.h);
+const hit = p => [...F().layers].reverse().find(l => p.x >= l.x && p.x <= l.x + l.w && p.y >= l.y && p.y <= l.y + l.h);
 
 cv.addEventListener('pointerdown', e => {
   const p = toCanvas(e), c = cornerAt(p);
@@ -325,7 +436,7 @@ const endDrag = () => { if (drag?.moved) { save(drag.before); refresh(); } drag 
 cv.addEventListener('pointerup', endDrag);
 cv.addEventListener('pointercancel', endDrag);
 
-// ---- 비율 ----
+// ---- 비율 (모든 장면 공통) ----
 function setRatio(r) {
   ratio = r;
   const [a, b] = r.split(':').map(Number);
@@ -346,20 +457,63 @@ for (const tab of document.querySelectorAll('[role=tab]')) {
   };
 }
 
+// ---- 움직이는 WebP 만들기 ----
+// 브라우저는 정지 WebP만 만들 수 있어서, 장면별 WebP의 이미지 청크를 꺼내 ANIM/ANMF 컨테이너로 묶는다.
+// 형식: https://developers.google.com/speed/webp/docs/riff_container
+const ascii = s => [...s].map(ch => ch.charCodeAt(0));
+const u24 = n => [n & 255, (n >> 8) & 255, (n >> 16) & 255];
+function chunk(id, ...parts) {
+  const size = parts.reduce((n, p) => n + p.length, 0), head = new Uint8Array(8);
+  head.set(ascii(id));
+  new DataView(head.buffer).setUint32(4, size, true);
+  return size & 1 ? [head, ...parts, new Uint8Array(1)] : [head, ...parts];
+}
+function imageChunks(webp) {  // 정지 WebP -> ALPH / VP8 / VP8L 청크들 (헤더와 패딩 포함)
+  const dv = new DataView(webp.buffer, webp.byteOffset, webp.byteLength), out = [];
+  if (String.fromCharCode(...webp.subarray(8, 12)) !== 'WEBP') throw new Error('not webp');
+  for (let p = 12; p + 8 <= webp.length;) {
+    const id = String.fromCharCode(...webp.subarray(p, p + 4)), size = dv.getUint32(p + 4, true);
+    const end = p + 8 + size + (size & 1);
+    if (id === 'ALPH' || id === 'VP8 ' || id === 'VP8L') out.push(webp.subarray(p, end));
+    p = end;
+  }
+  return out;
+}
+function animatedWebp(stills, w, h, durationsMs, loops) {
+  const body = [
+    ...chunk('VP8X', new Uint8Array([0x12, 0, 0, 0, ...u24(w - 1), ...u24(h - 1)])),  // 애니메이션 + 알파
+    ...chunk('ANIM', new Uint8Array([0, 0, 0, 0, loops & 255, loops >> 8])),           // 배경 투명, 반복 횟수 (0 = 무한)
+    ...stills.flatMap((s, i) => chunk('ANMF',
+      // x, y = 0 / 크기 / 표시 시간(ms) / 0x02 = 이전 장면과 섞지 않고 덮어씀
+      new Uint8Array([0, 0, 0, 0, 0, 0, ...u24(w - 1), ...u24(h - 1), ...u24(durationsMs[i]), 0x02]),
+      ...imageChunks(s))),
+  ];
+  const size = 4 + body.reduce((n, p) => n + p.length, 0), head = new Uint8Array(12);
+  head.set(ascii('RIFF')); new DataView(head.buffer).setUint32(4, size, true); head.set(ascii('WEBP'), 8);
+  return new Blob([head, ...body], { type: 'image/webp' });
+}
+
+function encodeFrame(frame) {
+  const c = document.createElement('canvas');
+  c.width = cv.width; c.height = cv.height;
+  paint(c.getContext('2d'), frame.layers);
+  return new Promise(resolve => c.toBlob(resolve, 'image/webp', QUALITY));
+}
+
 // ---- 저장 ----
-$('save').onclick = () => {
-  if (!layers.length) return alert('먼저 이미지를 불러오세요.');
-  draw(true);  // 선택 테두리 없이 그린 뒤 저장
-  cv.toBlob(blob => {
-    draw();
-    // WebP를 못 만드는 브라우저는 조용히 PNG를 돌려준다
-    if (!blob || blob.type !== 'image/webp') return alert('이 브라우저는 WebP 저장을 지원하지 않습니다. Chrome, Edge, Firefox를 사용하세요.');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'thumbnail.webp';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  }, 'image/webp', QUALITY);
+$('save').onclick = async () => {
+  if (frames.every(f => !f.layers.length)) return alert('먼저 이미지를 불러오세요.');
+  const stills = await Promise.all(frames.map(encodeFrame));
+  // WebP를 못 만드는 브라우저는 조용히 PNG를 돌려준다
+  if (stills.some(b => !b || b.type !== 'image/webp')) return alert('이 브라우저는 WebP 저장을 지원하지 않습니다. Chrome, Edge, Firefox를 사용하세요.');
+  const out = stills.length === 1 ? stills[0] : animatedWebp(
+    await Promise.all(stills.map(async b => new Uint8Array(await b.arrayBuffer()))),
+    cv.width, cv.height, frames.map(f => Math.round(f.dur * 1000)), Number($('loops').value) || 0);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(out);
+  a.download = 'thumbnail.webp';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 };
 
 addEventListener('resize', () => draw());
