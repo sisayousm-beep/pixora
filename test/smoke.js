@@ -86,6 +86,74 @@ const fs = require('fs');
   const buf = fs.readFileSync(await download.path());
   assert.strictEqual(buf.subarray(0, 4).toString(), 'RIFF');
   assert.strictEqual(buf.subarray(8, 12).toString(), 'WEBP');
+  assert.strictEqual(buf.indexOf('ANIM'), -1, 'one scene -> still image');
+  assert.ok(await page.locator('#anim').isHidden());
+
+  // ---- 장면 여러 개 -> 움직이는 WebP ----
+  // 장면 1: 파랑 (x540 y260, 200x200). 장면 2: 빨강을 채우기로 꽉 채움
+  await page.click('#frame-add');
+  assert.strictEqual(await page.locator('.frame').count(), 2);
+  await page.click('#t-layers');
+  await page.setInputFiles('#file', [{ name: 'red.png', mimeType: 'image/png', buffer: await png('#f00') }]);
+  await page.waitForFunction(() => document.querySelectorAll('#layers li').length === 1);
+  await page.click('#fit-cover');
+  // 장면 1로 돌아가면 파랑 하나만
+  await page.click('.frame >> nth=0');
+  assert.strictEqual(await page.locator('#layers li').count(), 1);
+  assert.strictEqual(await top(640, 360), 'blue');
+  // 장면 3을 추가했다가 실행 취소
+  await page.click('#frame-add');
+  assert.strictEqual(await page.locator('.frame').count(), 3);
+  await page.click('#undo');
+  assert.strictEqual(await page.locator('.frame').count(), 2);
+
+  // 시간: 일괄 1.5초 후 장면 2만 0.5초, 반복 3회
+  await page.click('#t-export');
+  assert.ok(await page.locator('#anim').isVisible());
+  await page.fill('#dur-all', '1.5');
+  await page.click('#dur-apply');
+  await page.fill('#durs li:nth-child(2) input', '0.5');
+  await page.press('#durs li:nth-child(2) input', 'Enter');
+  await page.fill('#loops', '3');
+  await page.press('#loops', 'Enter');
+
+  const [anim] = await Promise.all([page.waitForEvent('download'), page.click('#save')]);
+  const a = fs.readFileSync(await anim.path());
+  const at = a.indexOf('ANIM');
+  assert.ok(at > 0, 'has ANIM chunk');
+  assert.strictEqual(a.readUInt16LE(at + 8 + 4), 3, 'loop count');
+  assert.strictEqual(a.readUInt32LE(4), a.length - 8, 'RIFF size');
+  // 브라우저 디코더로 재생 정보와 장면 색 확인
+  const info = await page.evaluate(async b64 => {
+    const data = Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
+    const dec = new ImageDecoder({ data, type: 'image/webp' });
+    await dec.tracks.ready;
+    const out = { frames: dec.tracks.selectedTrack.frameCount, scenes: [] };
+    for (let i = 0; i < out.frames; i++) {
+      const { image } = await dec.decode({ frameIndex: i });
+      const k = new OffscreenCanvas(image.displayWidth, image.displayHeight), x = k.getContext('2d');
+      x.drawImage(image, 0, 0);
+      out.scenes.push({ ms: image.duration / 1000, w: image.displayWidth, h: image.displayHeight, px: Array.from(x.getImageData(640, 360, 1, 1).data) });
+      image.close();
+    }
+    return out;
+  }, a.toString('base64'));
+  assert.strictEqual(info.frames, 2);
+  assert.deepStrictEqual(info.scenes.map(s => [s.ms, s.w, s.h]), [[1500, 720, 1280], [500, 720, 1280]]);
+  const color = px => px[3] < 128 ? 'none' : px[0] > 200 && px[2] < 60 ? 'red' : px[2] > 200 && px[0] < 60 ? 'blue' : 'other';
+  assert.deepStrictEqual(info.scenes.map(s => color(s.px)), ['blue', 'red']);
+
+  // 무한 반복(0)
+  await page.fill('#loops', '0');
+  await page.press('#loops', 'Enter');
+  const [inf] = await Promise.all([page.waitForEvent('download'), page.click('#save')]);
+  const b = fs.readFileSync(await inf.path());
+  assert.strictEqual(b.readUInt16LE(b.indexOf('ANIM') + 12), 0);
+
+  // 장면 삭제 -> 다시 정지 이미지
+  await page.click('#frame-del');
+  assert.strictEqual(await page.locator('.frame').count(), 1);
+  assert.ok(await page.locator('#frame-del').isHidden());
 
   assert.deepStrictEqual(errors, []);
   console.log('OK');
