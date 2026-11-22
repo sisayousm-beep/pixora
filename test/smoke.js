@@ -61,6 +61,15 @@ const fs = require('fs');
   assert.strictEqual(await page.inputValue('#pw'), '500');
   assert.strictEqual(await page.inputValue('#ph'), '500');
 
+  // 맞추기/채우기 (16:9 캔버스, 정사각형 이미지)
+  const xywh = () => Promise.all(['#px', '#py', '#pw', '#ph'].map(s => page.inputValue(s)));
+  await page.click('#fit-contain');
+  assert.deepStrictEqual(await xywh(), ['280', '0', '720', '720']);
+  await page.click('#fit-cover');
+  assert.deepStrictEqual(await xywh(), ['0', '-280', '1280', '1280']);
+  await page.click('#undo');
+  assert.deepStrictEqual(await xywh(), ['280', '0', '720', '720']);
+
   // 삭제
   await page.click('#del');
   assert.strictEqual(await page.locator('#layers li').count(), 1);

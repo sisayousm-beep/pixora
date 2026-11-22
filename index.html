@@ -60,6 +60,7 @@
                  border-radius:6px; font-variant-numeric:tabular-nums; color:var(--fg);
                  font-size:16px; } /* 16px 미만이면 iOS가 포커스 때 확대한다 */
   .props input:disabled { color:var(--dim); }
+  .props .fit { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin-top:8px; }
 
   .actions { margin-top:auto; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px;
              padding:10px 12px 14px; background:var(--bar); border-top:1px solid var(--line); position:sticky; bottom:0; }
@@ -120,6 +121,12 @@
         <label>Y<input id="py" type="number" inputmode="numeric"></label>
         <label>W<input id="pw" type="number" inputmode="numeric" min="1"></label>
         <label>H<input id="ph" type="number" inputmode="numeric" min="1"></label>
+      </div>
+      <div class="fit">
+        <button class="btn" id="fit-contain" title="이미지 전체가 캔버스 안에 들어가게">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>맞추기</button>
+        <button class="btn" id="fit-cover" title="캔버스를 빈틈없이 채우게 (넘치는 부분은 잘림)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>채우기</button>
       </div>
     </fieldset>
     <div class="actions" id="actions">
@@ -212,7 +219,7 @@ function refresh() {
   for (const id of ['px', 'py', 'pw', 'ph']) $(id).disabled = !sel;
   $('fwd').disabled = !sel || i === layers.length - 1;
   $('back').disabled = !sel || i === 0;
-  $('del').disabled = !sel;
+  $('del').disabled = $('fit-contain').disabled = $('fit-cover').disabled = !sel;
   $('undo').disabled = !past.length;
   $('redo').disabled = !future.length;
   draw();
@@ -229,6 +236,18 @@ function reorder(step) {
 $('fwd').onclick = () => reorder(1);
 $('back').onclick = () => reorder(-1);
 $('del').onclick = () => { if (!sel) return; save(); layers = layers.filter(l => l !== sel); sel = null; refresh(); };
+
+// 캔버스 가운데에 비율 유지로 맞춤: contain = 전체가 보이게, cover = 빈틈없이 채우게
+function fit(cover) {
+  if (!sel) return;
+  const k = (cover ? Math.max : Math.min)(cv.width / sel.w, cv.height / sel.h);
+  save();
+  sel.w *= k; sel.h *= k;
+  sel.x = (cv.width - sel.w) / 2; sel.y = (cv.height - sel.h) / 2;
+  refresh();
+}
+$('fit-contain').onclick = () => fit(false);
+$('fit-cover').onclick = () => fit(true);
 
 // 숫자 입력: W/H는 원본 비율을 유지한다
 for (const id of ['px', 'py', 'pw', 'ph']) {
